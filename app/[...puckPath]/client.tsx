@@ -1,42 +1,59 @@
-"use client"
+"use client";
 
-import { AutoField, Button, FieldLabel, Puck, Render } from "@measured/puck"
-import headingAnalyzer from "@measured/puck-plugin-heading-analyzer"
-import "@measured/puck-plugin-heading-analyzer/dist/index.css"
-import config from "../../config"
-import { useDemoData } from "../../lib/use-demo-data"
-import { useEffect, useState } from "react"
-import { Type } from "lucide-react"
+import {
+  AutoField,
+  Button,
+  FieldLabel,
+  Puck,
+  Render,
+  resolveAllData,
+} from "@measured/puck";
+import headingAnalyzer from "@measured/puck-plugin-heading-analyzer";
+import "@measured/puck-plugin-heading-analyzer/dist/index.css";
+import config from "../../config";
+import { useEffect, useState } from "react";
+import { Type } from "lucide-react";
+import { publishPage } from "../puck-actions";
 
-export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
+export function Client({
+  path,
+  isEdit,
+  initialData,
+}: {
+  path: string;
+  isEdit: boolean;
+  initialData: any;
+}) {
   const metadata = {
     example: "Hello, world",
-  }
+  };
 
-  const { data, resolvedData, key } = useDemoData({
-    path,
-    isEdit,
-    metadata,
-  })
-
-  const [isClient, setIsClient] = useState(false)
+  const [resolvedData, setResolvedData] = useState(initialData);
 
   useEffect(() => {
-    setIsClient(true)
-  }, [])
+    if (initialData && !isEdit) {
+      resolveAllData(initialData, config, metadata).then(setResolvedData);
+    }
+  }, [initialData, isEdit]);
 
-  if (!isClient) return null
+  const [isClient, setIsClient] = useState(false);
 
-  const params = new URL(window.location.href).searchParams
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) return null;
+
+  const params = new URL(window.location.href).searchParams;
 
   if (isEdit) {
     return (
       <div>
         <Puck
           config={config}
-          data={data}
+          data={initialData}
           onPublish={async (data) => {
-            localStorage.setItem(key, JSON.stringify(data))
+            await publishPage(path, data);
           }}
           plugins={[headingAnalyzer]}
           headerPath={path}
@@ -78,11 +95,11 @@ export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
           metadata={metadata}
         />
       </div>
-    )
+    );
   }
 
-  if (data.content) {
-    return <Render config={config} data={resolvedData} metadata={metadata} />
+  if (initialData.content) {
+    return <Render config={config} data={resolvedData} metadata={metadata} />;
   }
 
   return (
@@ -97,10 +114,10 @@ export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
     >
       <div>
         <h1>404</h1>
-        <p>Page does not exist in session storage</p>
+        <p>Page does not exist in database</p>
       </div>
     </div>
-  )
+  );
 }
 
-export default Client
+export default Client;

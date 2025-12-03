@@ -1,6 +1,8 @@
 import resolvePuckPath from "../../lib/resolve-puck-path";
 import { Metadata } from "next";
 import Client from "./client";
+import { getPage } from "../../lib/db";
+
 export async function generateMetadata({
   params,
 }: {
@@ -9,6 +11,8 @@ export async function generateMetadata({
   const { puckPath } = await params;
   const { isEdit, path } = resolvePuckPath(puckPath);
 
+  const data = await getPage(path);
+
   if (isEdit) {
     return {
       title: "Editing: " + path,
@@ -16,7 +20,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: "",
+    title: data?.root?.props?.title || data?.root?.title || "Puck Page",
   };
 }
 
@@ -28,5 +32,7 @@ export default async function Page({
   const { puckPath } = await params;
   const { isEdit, path } = resolvePuckPath(puckPath);
 
-  return <Client isEdit={isEdit} path={path} />;
+  const data = await getPage(path);
+
+  return <Client isEdit={isEdit} path={path} initialData={data || {}} />;
 }
